@@ -33,4 +33,19 @@ router.post('/book',authMiddleware,MulterMiddleware.array('uploadImage',3),bookC
 // get all books
 router.get('/all-books',authMiddleware,bookController.getAllBooksController)
 
+// get user uploaded books
+router.get('/user-books',authMiddleware,bookController.getUserBooksController)
+
+// get user brought books
+router.get('/brought-books',authMiddleware,bookController.getUserBroughtBooksController)
+
+// delete book user uploaded
+ router.delete('/book/:id',authMiddleware,bookController.DeleteUploadBooksController)
+
+ // view single book uploaded
+ router.get('/view-book/:id',authMiddleware,bookController.viewBookController)
+
+ // book payment
+ router.put('/books/:id/buy',authMiddleware,bookController.bookPaymentController)
+
 module.exports = router
