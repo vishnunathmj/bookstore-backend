@@ -3,6 +3,8 @@ const userController = require('../controllers/userController')
 const bookController = require('../controllers/bookController')
 const authMiddleware = require('../middleware/authMiddleware')
 const MulterMiddleware = require('../middleware/MulterMiddleware')
+const adminMiddleware = require('../middleware/adminMiddleware')
+
 
 
 // object for router classs in express
@@ -47,5 +49,20 @@ router.get('/brought-books',authMiddleware,bookController.getUserBroughtBooksCon
 
  // book payment
  router.put('/books/:id/buy',authMiddleware,bookController.bookPaymentController)
+
+
+ // --------------------------------- AUTHERIZED ACCESS :ADMIN ------------------------------
+
+//  edit admin
+ router.put('/admin/:id',adminMiddleware,MulterMiddleware.single('picture'),userController.userEditController)
+
+// get all users
+ router.get('/user-list',adminMiddleware,userController.getAllUsersController)
+
+//  get all book for admin
+router.get('/book-list',adminMiddleware,bookController.getAllBookController)
+
+// update book stsus admin side
+router.get('/book/:id',adminMiddleware,bookController.updateBookStatusController)
 
 module.exports = router

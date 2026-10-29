@@ -73,8 +73,21 @@ exports.viewBookController = async (req, res) => {
 
 
 // get all books : admin page
+exports.getAllBookController = async (req,res)=>{
+    console.log("inside getAllBookController");
+    const allBooks = await books.find()
+    res.status(200).json(allBooks) 
+}
 
 // update book status : admin page
+exports.updateBookStatusController = async (req,res)=>{
+    console.log("inside getAllAdminBookController");
+    const {id} = req.params
+    const booksDetails = await books.findById({_id:id})
+    bookDetails.status = "approved"
+    await booksDetails.save()
+    res.status(200).json(booksDetails) 
+}
 
 // book payment
 exports.bookPaymentController = async (req,res)=>{
