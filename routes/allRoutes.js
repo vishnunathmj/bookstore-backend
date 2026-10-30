@@ -62,7 +62,7 @@ router.get('/brought-books',authMiddleware,bookController.getUserBroughtBooksCon
 //  get all book for admin
 router.get('/book-list',adminMiddleware,bookController.getAllBookController)
 
-// update book stsus admin side
-router.get('/book/:id',adminMiddleware,bookController.updateBookStatusController)
+// update book status admin side
+router.put('/book/:id',adminMiddleware,bookController.updateBookStatusController)
 
 module.exports = router

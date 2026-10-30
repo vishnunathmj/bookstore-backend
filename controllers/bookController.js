@@ -84,7 +84,7 @@ exports.updateBookStatusController = async (req,res)=>{
     console.log("inside getAllAdminBookController");
     const {id} = req.params
     const booksDetails = await books.findById({_id:id})
-    bookDetails.status = "approved"
+    booksDetails.status = "approved"
     await booksDetails.save()
     res.status(200).json(booksDetails) 
 }
