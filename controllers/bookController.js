@@ -1,5 +1,7 @@
+const { model } = require('mongoose');
 const books = require('../models/bookModel')
 const stripe = require('stripe')(process.env.STRIPE_SK);
+const { GoogleGenerativeAI } = require('@google/generative-ai')
 
 // add book
 exports.addBookController = async (req, res) => {
@@ -34,7 +36,7 @@ exports.getAllBooksController = async (req, res) => {
     console.log("getAllBooksController");
     const loginUserMail = req.payload
     const searchKey = req.query.search
-    const allBooks = await books.find({ sellerMail: { $ne: loginUserMail },title:{$regex:searchKey,$options:"i"}})
+    const allBooks = await books.find({ sellerMail: { $ne: loginUserMail }, title: { $regex: searchKey, $options: "i" } })
     res.status(200).json(allBooks)
 }
 
@@ -58,72 +60,107 @@ exports.getUserBroughtBooksController = async (req, res) => {
 // delete book uploaded by logined user
 exports.DeleteUploadBooksController = async (req, res) => {
     console.log("DeleteUploadBooksController");
-    const {id} = req.params
-    const deleteBooks = await books.findByIdAndDelete({_id:id})
+    const { id } = req.params
+    const deleteBooks = await books.findByIdAndDelete({ _id: id })
     res.status(200).json(deleteBooks)
 }
 
 // get a single book to view
 exports.viewBookController = async (req, res) => {
     console.log("viewBookController");
-    const {id} = req.params
-    const bookDetail = await books.findById({_id:id})
+    const { id } = req.params
+    const bookDetail = await books.findById({ _id: id })
     res.status(200).json(bookDetail)
 }
 
 
 // get all books : admin page
-exports.getAllBookController = async (req,res)=>{
+exports.getAllBookController = async (req, res) => {
     console.log("inside getAllBookController");
     const allBooks = await books.find()
-    res.status(200).json(allBooks) 
+    res.status(200).json(allBooks)
 }
 
 // update book status : admin page
-exports.updateBookStatusController = async (req,res)=>{
+exports.updateBookStatusController = async (req, res) => {
     console.log("inside getAllAdminBookController");
-    const {id} = req.params
-    const booksDetails = await books.findById({_id:id})
+    const { id } = req.params
+    const booksDetails = await books.findById({ _id: id })
     booksDetails.status = "approved"
     await booksDetails.save()
-    res.status(200).json(booksDetails) 
+    res.status(200).json(booksDetails)
 }
 
 // book payment
-exports.bookPaymentController = async (req,res)=>{
+exports.bookPaymentController = async (req, res) => {
     console.log("inside bookPaymentController");
     const buyerMail = req.payload
-    const {id} = req.params
-    const bookDetails = await books.findById({_id:id})
+    const { id } = req.params
+    const bookDetails = await books.findById({ _id: id })
     bookDetails.status = "sold"
     bookDetails.buyerMail = buyerMail
     await bookDetails.save()
     // Create stripe checkoutsession
     const line_items = [{
-        price_data : {
-            currency :"usd",
-            product_data : {
-                name : bookDetails.title,
-                description : `${bookDetails.author},${bookDetails.publisher}`,
+        price_data: {
+            currency: "usd",
+            product_data: {
+                name: bookDetails.title,
+                description: `${bookDetails.author},${bookDetails.publisher}`,
                 // images : bookDetails.uploadImage,
-                metadata : {
-                    title:bookDetails.title,author:bookDetails.author,price:bookDetails.discountPrice
+                metadata: {
+                    title: bookDetails.title, author: bookDetails.author, price: bookDetails.discountPrice
                 }
             },
-            unit_amount:Math.round(bookDetails.discountPrice)*100
+            unit_amount: Math.round(bookDetails.discountPrice) * 100
         },
-        quantity:1
+        quantity: 1
     }]
 
     const session = await stripe.checkout.sessions.create({
-        success_url : "http://localhost:5173/success",
-        cancel_url : "http://localhost:5173/failed",
+        success_url: "http://localhost:5173/success",
+        cancel_url: "http://localhost:5173/failed",
         line_items,
         mode: 'payment',
-        allowed_payment_method_types :['card']
+        allowed_payment_method_types: ['card']
     })
     console.log(session);
-    res.status(200).json({checkOutURL:session.url})
+    res.status(200).json({ checkOutURL: session.url })
 
 
 }
+
+// get book abstract using gemini api
+exports.GenerateAbstractAIController = async (req, res) => {
+    console.log("Inside GenerateAbstractAIController");
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+    const { title } = req.body;
+
+    const model = genAI.getGenerativeModel({
+        model: "gemini-3.5-flash-lite"
+    });
+
+    const result = await model.generateContent(
+        `Give me a short abstract, ISBN, and author name of the book ${title} in JSON format`
+    );
+
+    let replay = result.response.candidates[0].content.parts[0].text;
+
+    // Remove Markdown code fences
+    replay = replay.replace(/```json|```/g, "").trim();
+
+    // Convert string into JSON
+    const bookData = JSON.parse(replay);
+
+    // Extract abstract
+    const abstract = bookData.abstract;
+    const author = bookData.author;
+    const isbn = bookData.isbn;
+
+    res.status(200).json({
+        success: true,
+        user: title,
+        content: {abstract,author,isbn}
+    });
+};

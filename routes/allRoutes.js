@@ -47,6 +47,9 @@ router.get('/brought-books',authMiddleware,bookController.getUserBroughtBooksCon
  // view single book uploaded
  router.get('/view-book/:id',authMiddleware,bookController.viewBookController)
 
+ // get abstract via AI book
+ router.post('/books-ai',authMiddleware,bookController.GenerateAbstractAIController)
+
  // book payment
  router.put('/books/:id/buy',authMiddleware,bookController.bookPaymentController)
 
